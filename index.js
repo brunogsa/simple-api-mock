@@ -32,7 +32,21 @@ const loggingMiddleware = (req, res, next) => {
   next();
 };
 
+const permissiveCorsMiddleware = (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).send();
+  } else {
+    next();
+  }
+};
+
 app.use(loggingMiddleware);
+app.use(permissiveCorsMiddleware);
 
 const DB_FILE = "./db.json"
 const PORT = 3333;
@@ -55,75 +69,295 @@ const syncJsonDb = async () => {
 };
 
 // GET
-app.get('/api/data/:id', async (req, res) => {
-  // Example for getting params from path
+app.get('/api/v1/category/list', async (req, res) => {
+  if (!db.categories) {
+    res.status(404).json({ error: 'Data not found' });
+    return;
+  }
+
+  res.status(200).json({
+    result: db.categories,
+  });
+});
+
+app.get('/api/v1/category/findCategory/:id', async (req, res) => {
   const id = req.params.id;
 
-  // Extract data from headers
-  const customHeader = req.headers['custom-header'];
-
-  // Extract data from query string
-  const page = req.query.page;
-
-  console.log(customHeader, page);
-
-  if (db[id]) {
-    res.json(db[id]);
-  } else {
+  if (!db.categories) {
     res.status(404).json({ error: 'Data not found' });
+    return;
   }
+
+  const category = db.categories.find((category) => (category.idCategory === id));
+
+  if (!category) {
+    res.status(404).json({ error: `Data not found for ID ${id}` });
+    return;
+  }
+
+  res.status(200).json({
+    result: category,
+  });
 });
+
+app.get('/api/v1/customer/list', async (req, res) => {
+  if (!db.customers) {
+    res.status(404).json({ error: 'Data not found' });
+    return;
+  }
+
+  res.status(200).json({
+    result: db.customers,
+  });
+});
+
+app.get('/api/v1/customer/findCustomer/:id', async (req, res) => {
+  const id = req.params.id;
+
+  if (!db.customers) {
+    res.status(404).json({ error: 'Data not found' });
+    return;
+  }
+
+  const customer = db.customers.find((customer) => (customer.idCustomer === id));
+
+  if (!customer) {
+    res.status(404).json({ error: `Data not found for ID ${id}` });
+    return;
+  }
+
+  res.status(200).json({
+    result: customer,
+  });
+});
+
+app.get('/api/v1/product/list', async (req, res) => {
+  if (!db.products) {
+    res.status(404).json({ error: 'Data not found' });
+    return;
+  }
+
+  res.status(200).json({
+    result: db.products,
+  });
+});
+
+app.get('/api/v1/product/findProduct/:id', async (req, res) => {
+  const id = req.params.id;
+
+  if (!db.products) {
+    res.status(404).json({ error: 'Data not found' });
+    return;
+  }
+
+  const product = db.products.find((product) => (product.idProduct === id));
+
+  if (!product) {
+    res.status(404).json({ error: `Data not found for ID ${id}` });
+    return;
+  }
+
+  res.status(200).json({
+    result: product,
+  });
+});
+
 
 // POST
-app.post('/api/data', async (req, res) => {
-  const data = req.body; // Example for gettings params from body
-  //
-  const id = data.id;
-  db[id] = data;
+app.post('/api/v1/category/create', async (req, res) => {
+  const data = req.body;
+
+  const idCategory = data.idCategory || uuidv4();
+
+  if (!db.categories) db.categories = [];
+  const dataStoStore = { ...data, idCategory };
+  db.categories.push(dataStoStore);
 
   await syncJsonDb();
-  res.status(201).json({ message: 'Data created' });
+  res.status(200).json({ result: dataStoStore });
 });
 
+app.post('/api/v1/customer/create', async (req, res) => {
+  const data = req.body;
+
+  const idCustomer = data.idCustomer || uuidv4();
+
+  if (!db.customers) db.customers = [];
+  const dataToStore = { ...data, idCustomer };
+  db.customers.push(dataToStore);
+
+  await syncJsonDb();
+  res.status(200).json({ result: dataToStore });
+});
+
+app.post('/api/v1/product/create', async (req, res) => {
+  const data = req.body;
+
+  const idProduct = data.idProduct || uuidv4();
+
+  if (!db.products) db.products = [];
+  const dataToStore = { ...data, idProduct };
+  db.products.push(dataToStore);
+
+  await syncJsonDb();
+  res.status(200).json({ result: dataToStore });
+});
+
+
 // PUT
-app.put('/api/data/:id', async (req, res) => {
+app.put('/api/v1/category/update/:id', async (req, res) => {
   const id = req.params.id;
   const data = req.body;
 
-  db[id] = data;
+  if (!db.categories) {
+    res.status(404).json({ error: 'Data not found' });
+    return;
+  }
+
+  let category = db.categories.find((category) => (category.idCategory === id));
+
+  if (!category) {
+    res.status(404).json({ error: `Data not found for ID ${id}` });
+    return;
+  }
+
+  category.nameCategory = data.nameCategory;
+  category.descriptionCategory = data.descriptionCategory;
 
   await syncJsonDb();
-  res.status(200).json({ message: 'Data updated' });
+  res.status(200).json({ result: category });
 });
+
+app.put('/api/v1/customer/update/:id', async (req, res) => {
+  const id = req.params.id;
+  const data = req.body;
+
+  if (!db.customers) {
+    res.status(404).json({ error: 'Data not found' });
+    return;
+  }
+
+  let customer = db.customers.find((customer) => (customer.idCustomer === id));
+
+  if (!customer) {
+    res.status(404).json({ error: `Data not found for ID ${id}` });
+    return;
+  }
+
+  [
+    "firstNameCustomer",
+    "lastNameCustomer",
+    "cpfCustomer",
+    "birthdateCustomer",
+    "dateCreatedCustomer",
+    "monthlyIncomeCustomer",
+    "statusCustomer",
+    "emailCustomer",
+    "passwordCustomer",
+  ].forEach((key) => {
+    customer[key] = data[key];
+  });
+
+  await syncJsonDb();
+  res.status(200).json({ result: customer });
+});
+
+app.put('/api/v1/product/update/:id', async (req, res) => {
+  const id = req.params.id;
+  const data = req.body;
+
+  if (!db.products) {
+    res.status(404).json({ error: 'Data not found' });
+    return;
+  }
+
+  let product = db.products.find((product) => (product.idProduct === id));
+
+  if (!product) {
+    res.status(404).json({ error: `Data not found for ID ${id}` });
+    return;
+  }
+
+  [
+    "nameProduct",
+    "descriptionProduct",
+    "costPriceProduct",
+    "amountProduct",
+    "dateCreatedProduct",
+    "category",
+  ].forEach((key) => {
+    product[key] = data[key];
+  });
+
+  await syncJsonDb();
+  res.status(200).json({ result: product });
+});
+
 
 // PATCH
-app.patch('/api/data/:id', async (req, res) => {
-  const id = req.params.id;
-  const updates = req.body;
 
-  if (db[id]) {
-    db[id] = { ...db[id], ...updates };
-
-    await syncJsonDb();
-    res.status(200).json({ message: 'Data updated' });
-  } else {
-    res.status(404).json({ error: 'Data not found' });
-  }
-});
 
 // DELETE
-app.delete('/api/data/:id', async (req, res) => {
+app.delete('/api/v1/category/delete/:id', async (req, res) => {
   const id = req.params.id;
 
-  if (db[id]) {
-    delete db[id];
-
-    await syncJsonDb();
-    res.status(200).json({ message: 'Data deleted' });
-  } else {
-    res.status(404).json({ error: 'Data not found' });
+  if (!db.categories) {
+    res.status(404).json({ error: 'Data not found, no categories' });
+    return;
   }
+
+  const category = db.categories.find((category) => (category.idCategory === id));
+
+  if (!category) {
+    res.status(404).json({ error: `Data not found for ID ${id}` });
+    return;
+  }
+
+  db.categories = db.categories.filter((category) => (category.idCategory !== id));
+  await syncJsonDb();
+  res.status(200).json({ result: { result: JSON.stringify(category) } });
 });
+
+app.delete('/api/v1/customer/delete/:id', async (req, res) => {
+  const id = req.params.id;
+
+  if (!db.customers) {
+    res.status(404).json({ error: 'Data not found, no customers' });
+    return;
+  }
+
+  const customer = db.customers.find((customer) => (customer.idCustomer === id));
+
+  if (!customer) {
+    res.status(404).json({ error: `Data not found for ID ${id}` });
+    return;
+  }
+
+  db.customers = db.customers.filter((customer) => (customer.idCustomer !== id));
+  await syncJsonDb();
+  res.status(200).json({ result: { result: JSON.stringify(customer) } });
+});
+
+app.delete('/api/v1/product/delete/:id', async (req, res) => {
+  const id = req.params.id;
+
+  if (!db.products) {
+    res.status(404).json({ error: 'Data not found, no products' });
+    return;
+  }
+
+  const product = db.products.find((product) => (product.idProduct === id));
+
+  if (!product) {
+    res.status(404).json({ error: `Data not found for ID ${id}` });
+    return;
+  }
+
+  db.products = db.products.filter((product) => (product.idProduct !== id));
+  await syncJsonDb();
+  res.status(200).json({ result: { result: JSON.stringify(product) } });
+});
+
 
 app.use((req, res, next) => {
   res.status(501).send("Not Implemented");
