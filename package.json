@@ -1,0 +1,28 @@
+{
+  "name": "simple-api-mock",
+  "version": "1.0.0",
+  "description": "A simple API mock using express.js, for faster UI development.",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon --watch index.js --watch db.json index.js",
+    "lint": "eslint",
+    "watch:db": "watch -n 1 -d -x cat db.json"
+  },
+  "keywords": [
+    "express",
+    "mock",
+    "api",
+    "node",
+    "simple"
+  ],
+  "author": "brunogsa",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.43.0",
+    "nodemon": "^2.0.22"
+  }
+}
