@@ -1,12 +1,15 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 app.use(bodyParser.json());
 
 const loggingMiddleware = (req, res, next) => {
-  console.log(' === NEW REQUEST ===');
+  const uniqueId = uuidv4();
+
+  console.log(` === NEW REQUEST: ${uniqueId} ===`);
   console.log('Request Method:', req.method);
   console.log('Request URL:', req.url);
   console.log('Request Query String:', req.query);
@@ -16,7 +19,7 @@ const loggingMiddleware = (req, res, next) => {
   // Wrap the res.send function to log the response information
   const originalSend = res.send;
   res.send = function (body) {
-    console.log(' === SENT RESPONSE ===');
+    console.log(` === SENT RESPONSE: ${uniqueId} ===`);
     console.log('Response Status Code:', res.statusCode);
     console.log('Response Headers:', res.getHeaders());
     console.log('Response Body:', body);
