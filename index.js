@@ -125,6 +125,10 @@ app.delete('/api/data/:id', async (req, res) => {
   }
 });
 
+app.use((req, res, next) => {
+  res.status(501).send("Not Implemented");
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
